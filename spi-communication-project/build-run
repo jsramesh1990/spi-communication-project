@@ -1,0 +1,16 @@
+# Create the project structure
+mkdir -p spi-communication-project
+cd spi-communication-project
+# Copy all the files above into their respective directories
+
+# Build and run everything
+make all
+
+# Run just simulations
+make sim
+
+# Build firmware
+make firmware
+
+# Clean build
+make clean

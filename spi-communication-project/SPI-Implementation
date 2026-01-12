@@ -1,0 +1,452 @@
+Core SPI Implementation
+1. SPI Master Module (Verilog)
+verilog
+// spi_master.v
+module spi_master (
+    input wire clk,
+    input wire reset,
+    input wire start,
+    input wire [7:0] data_tx,
+    input wire [1:0] cpol_cpha, // SPI mode
+    output reg [7:0] data_rx,
+    output reg busy,
+    output reg done,
+    
+    // SPI physical interface
+    output reg sck,
+    output reg mosi,
+    input wire miso,
+    output reg cs_n
+);
+
+    parameter CLK_DIV = 4; // Clock divider
+    reg [2:0] clk_counter;
+    reg [3:0] bit_counter;
+    reg [7:0] shift_tx;
+    reg [7:0] shift_rx;
+    
+    typedef enum logic [1:0] {
+        IDLE,
+        TRANSFER,
+        COMPLETE
+    } state_t;
+    
+    state_t state;
+    
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            state <= IDLE;
+            sck <= 1'b0;
+            cs_n <= 1'b1;
+            busy <= 1'b0;
+            done <= 1'b0;
+        end else begin
+            case (state)
+                IDLE: begin
+                    sck <= cpol_cpha[0]; // Set SCK idle state
+                    cs_n <= 1'b1;
+                    busy <= 1'b0;
+                    done <= 1'b0;
+                    
+                    if (start) begin
+                        state <= TRANSFER;
+                        cs_n <= 1'b0;
+                        busy <= 1'b1;
+                        shift_tx <= data_tx;
+                        bit_counter <= 0;
+                        clk_counter <= 0;
+                    end
+                end
+                
+                TRANSFER: begin
+                    clk_counter <= clk_counter + 1;
+                    
+                    if (clk_counter == (CLK_DIV/2 - 1)) begin
+                        // Toggle SCK on appropriate edge based on CPHA
+                        sck <= ~sck;
+                        
+                        if ((cpol_cpha[1] == 0 && sck == 0) || 
+                            (cpol_cpha[1] == 1 && sck == 1)) begin
+                            // Sample MISO (read)
+                            shift_rx <= {shift_rx[6:0], miso};
+                        end
+                        
+                        if ((cpol_cpha[1] == 0 && sck == 1) || 
+                            (cpol_cpha[1] == 1 && sck == 0)) begin
+                            // Output MOSI (write)
+                            mosi <= shift_tx[7];
+                            shift_tx <= {shift_tx[6:0], 1'b0};
+                            bit_counter <= bit_counter + 1;
+                        end
+                    end
+                    
+                    if (clk_counter == (CLK_DIV - 1)) begin
+                        clk_counter <= 0;
+                        if (bit_counter == 8) begin
+                            state <= COMPLETE;
+                            data_rx <= shift_rx;
+                        end
+                    end
+                end
+                
+                COMPLETE: begin
+                    done <= 1'b1;
+                    cs_n <= 1'b1;
+                    state <= IDLE;
+                end
+            endcase
+        end
+    end
+    
+endmodule
+2. SPI Controller with Register Interface
+verilog
+// spi_controller.v
+module spi_controller (
+    input wire clk,
+    input wire reset,
+    
+    // Register interface
+    input wire [31:0] addr,
+    input wire [31:0] data_in,
+    input wire write_en,
+    input wire read_en,
+    output reg [31:0] data_out,
+    
+    // SPI interface
+    output wire spi_sck,
+    output wire spi_mosi,
+    input wire spi_miso,
+    output wire spi_cs_n
+);
+
+    // Register map
+    localparam REG_CONTROL  = 8'h00;
+    localparam REG_STATUS   = 8'h04;
+    localparam REG_TX_DATA  = 8'h08;
+    localparam REG_RX_DATA  = 8'h0C;
+    localparam REG_CLK_DIV  = 8'h10;
+    
+    // Internal registers
+    reg [7:0] control_reg;
+    reg [7:0] status_reg;
+    reg [7:0] tx_data_reg;
+    reg [7:0] rx_data_reg;
+    reg [7:0] clk_div_reg;
+    
+    // Control register bits
+    localparam CTRL_START   = 0;
+    localparam CTRL_MODE0   = 1;
+    localparam CTRL_MODE1   = 2;
+    localparam CTRL_CS_SEL0 = 3;
+    localparam CTRL_CS_SEL1 = 4;
+    
+    // Status register bits
+    localparam STAT_BUSY    = 0;
+    localparam STAT_DONE    = 1;
+    
+    // SPI master instance
+    wire spi_busy, spi_done;
+    wire [1:0] spi_mode = {control_reg[CTRL_MODE1], control_reg[CTRL_MODE0]};
+    
+    spi_master spi_inst (
+        .clk(clk),
+        .reset(reset),
+        .start(control_reg[CTRL_START]),
+        .data_tx(tx_data_reg),
+        .cpol_cpha(spi_mode),
+        .data_rx(rx_data_reg),
+        .busy(spi_busy),
+        .done(spi_done),
+        .sck(spi_sck),
+        .mosi(spi_mosi),
+        .miso(spi_miso),
+        .cs_n(spi_cs_n)
+    );
+    
+    // Register write
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            control_reg <= 8'h00;
+            tx_data_reg <= 8'h00;
+            clk_div_reg <= 8'h04;
+        end else if (write_en) begin
+            case (addr[7:0])
+                REG_CONTROL: begin
+                    control_reg <= data_in[7:0];
+                    // Clear START bit after one cycle
+                    if (data_in[CTRL_START])
+                        control_reg[CTRL_START] <= 1'b1;
+                end
+                REG_TX_DATA: tx_data_reg <= data_in[7:0];
+                REG_CLK_DIV: clk_div_reg <= data_in[7:0];
+            endcase
+        end
+        
+        // Auto-clear start bit
+        if (control_reg[CTRL_START] && spi_busy) begin
+            control_reg[CTRL_START] <= 1'b0;
+        end
+    end
+    
+    // Status register update
+    always @(posedge clk) begin
+        status_reg[STAT_BUSY] <= spi_busy;
+        status_reg[STAT_DONE] <= spi_done;
+        
+        if (spi_done) begin
+            status_reg[STAT_DONE] <= 1'b1;
+        end
+    end
+    
+    // Register read
+    always @(*) begin
+        data_out = 32'h00000000;
+        if (read_en) begin
+            case (addr[7:0])
+                REG_CONTROL: data_out = {24'h0, control_reg};
+                REG_STATUS:  data_out = {24'h0, status_reg};
+                REG_TX_DATA: data_out = {24'h0, tx_data_reg};
+                REG_RX_DATA: data_out = {24'h0, rx_data_reg};
+                REG_CLK_DIV: data_out = {24'h0, clk_div_reg};
+                default:     data_out = 32'hDEADBEEF;
+            endcase
+        end
+    end
+    
+endmodule
+3. Firmware Driver (C Code)
+c
+// spi_driver.c
+#include <stdint.h>
+
+#define SPI_BASE_ADDR 0x40000000
+
+// Register offsets
+#define SPI_CONTROL  0x00
+#define SPI_STATUS   0x04
+#define SPI_TX_DATA  0x08
+#define SPI_RX_DATA  0x0C
+#define SPI_CLK_DIV  0x10
+
+// Control bits
+#define CTRL_START   (1 << 0)
+#define CTRL_MODE0   (1 << 1)
+#define CTRL_MODE1   (1 << 2)
+#define CTRL_CS0     (1 << 3)
+
+// Status bits
+#define STAT_BUSY    (1 << 0)
+#define STAT_DONE    (1 << 1)
+
+// Write to register
+static void spi_write_reg(uint32_t offset, uint8_t value) {
+    volatile uint8_t *addr = (volatile uint8_t *)(SPI_BASE_ADDR + offset);
+    *addr = value;
+}
+
+// Read from register
+static uint8_t spi_read_reg(uint32_t offset) {
+    volatile uint8_t *addr = (volatile uint8_t *)(SPI_BASE_ADDR + offset);
+    return *addr;
+}
+
+// Initialize SPI
+void spi_init(uint8_t mode, uint8_t clk_div) {
+    // Set SPI mode
+    uint8_t ctrl = 0;
+    if (mode & 0x01) ctrl |= CTRL_MODE0;
+    if (mode & 0x02) ctrl |= CTRL_MODE1;
+    
+    spi_write_reg(SPI_CONTROL, ctrl);
+    spi_write_reg(SPI_CLK_DIV, clk_div);
+}
+
+// Send and receive data
+uint8_t spi_transfer(uint8_t data) {
+    // Write data to transmit register
+    spi_write_reg(SPI_TX_DATA, data);
+    
+    // Start transfer
+    spi_write_reg(SPI_CONTROL, CTRL_START | CTRL_CS0);
+    
+    // Wait for transfer to complete
+    while (spi_read_reg(SPI_STATUS) & STAT_BUSY) {
+        // Busy wait
+    }
+    
+    // Clear status
+    spi_write_reg(SPI_STATUS, 0);
+    
+    // Read received data
+    return spi_read_reg(SPI_RX_DATA);
+}
+
+// Send multiple bytes
+void spi_write_bytes(const uint8_t *data, uint32_t len) {
+    for (uint32_t i = 0; i < len; i++) {
+        spi_transfer(data[i]);
+    }
+}
+
+// Read multiple bytes
+void spi_read_bytes(uint8_t *buffer, uint32_t len) {
+    for (uint32_t i = 0; i < len; i++) {
+        buffer[i] = spi_transfer(0xFF); // Send dummy byte
+    }
+}
+4. Main Application Example
+c
+// main.c
+#include "spi_driver.h"
+
+// Example: Communicate with SPI Flash memory
+void spi_flash_example(void) {
+    // Initialize SPI in mode 0, clock divider 4
+    spi_init(0, 4);
+    
+    // Send Read ID command (0x9F)
+    uint8_t cmd = 0x9F; // RDID command
+    spi_transfer(cmd);
+    
+    // Read 3-byte ID
+    uint8_t id[3];
+    spi_read_bytes(id, 3);
+    
+    // Send Write Enable command (0x06)
+    spi_transfer(0x06);
+    
+    // Example: Write data to address 0x000100
+    uint8_t write_cmd[] = {0x02, 0x00, 0x01, 0x00, 'H', 'e', 'l', 'l', 'o'};
+    spi_write_bytes(write_cmd, sizeof(write_cmd));
+    
+    // Wait for write to complete
+    do {
+        spi_transfer(0x05); // Read Status Register
+    } while (spi_transfer(0xFF) & 0x01); // Check BUSY bit
+}
+
+int main(void) {
+    spi_flash_example();
+    return 0;
+}
+5. Top-level SoC Integration
+verilog
+// top.v
+module top (
+    input wire clk,
+    input wire reset_n,
+    
+    // SPI interface
+    output wire spi_sck,
+    output wire spi_mosi,
+    input wire spi_miso,
+    output wire spi_cs_n,
+    
+    // GPIO for testing
+    output wire [7:0] leds
+);
+
+    // Clock and reset
+    wire clk_50mhz;
+    wire reset;
+    
+    // Wishbone bus signals
+    wire [31:0] wb_addr;
+    wire [31:0] wb_data_in;
+    wire [31:0] wb_data_out;
+    wire wb_write_en;
+    wire wb_read_en;
+    
+    // CPU/Memory subsystem (simplified)
+    simple_cpu cpu_inst (
+        .clk(clk_50mhz),
+        .reset(reset),
+        .wb_addr(wb_addr),
+        .wb_data_out(wb_data_in),
+        .wb_data_in(wb_data_out),
+        .wb_write_en(wb_write_en),
+        .wb_read_en(wb_read_en)
+    );
+    
+    // SPI Controller instance
+    spi_controller spi_ctrl (
+        .clk(clk_50mhz),
+        .reset(reset),
+        .addr(wb_addr),
+        .data_in(wb_data_in),
+        .write_en(wb_write_en),
+        .read_en(wb_read_en),
+        .data_out(wb_data_out),
+        .spi_sck(spi_sck),
+        .spi_mosi(spi_mosi),
+        .spi_miso(spi_miso),
+        .spi_cs_n(spi_cs_n)
+    );
+    
+    // Clock generation
+    clk_gen clock_generator (
+        .clk_in(clk),
+        .clk_out(clk_50mhz)
+    );
+    
+    assign reset = ~reset_n;
+    
+    // LED indicators
+    assign leds = spi_data_out[7:0];
+    
+endmodule
+How SPI Communication Works
+Triggering Commands:
+Master initiates transfer: Sets CS (Chip Select) low
+
+Clock synchronization: SCK generates clock pulses based on CPOL/CPHA
+
+Data transfer:
+
+MOSI: Master Out Slave In (data from master)
+
+MISO: Master In Slave Out (data from slave)
+
+Completion: CS goes high, transfer complete
+
+SPI Modes:
+Mode 0: CPOL=0, CPHA=0 (SCK idle low, sample on rising edge)
+
+Mode 1: CPOL=0, CPHA=1 (SCK idle low, sample on falling edge)
+
+Mode 2: CPOL=1, CPHA=0 (SCK idle high, sample on falling edge)
+
+Mode 3: CPOL=1, CPHA=1 (SCK idle high, sample on rising edge)
+
+Key Features to Implement in SoC:
+Register Interface: Memory-mapped registers for control
+
+Clock Divider: Configurable SPI clock frequency
+
+Interrupt Support: Transfer completion interrupts
+
+DMA Support: Direct memory access for bulk transfers
+
+Multiple Chip Selects: Support for multiple slave devices
+
+FIFO Buffers: Data buffering for efficient transfers
+
+Building and Testing
+bash
+# Clone the repository
+git clone https://github.com/yourusername/spi-communication-project.git
+cd spi-communication-project
+
+# Build the project
+make all
+
+# Run simulation
+make sim
+
+# Run tests
+make test
+
+# Generate documentation
+make docs
+This basic SPI implementation provides a foundation for more advanced features like interrupt-driven operation, DMA transfers, and support for various SPI modes and devices.

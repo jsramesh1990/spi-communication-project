@@ -1,0 +1,84 @@
+# SPI Communication Project
+
+A complete implementation of SPI (Serial Peripheral Interface) communication with a basic System-on-Chip (SoC) design.
+
+## Features
+- SPI Master and Slave implementations in Verilog
+- Configurable SPI modes (0, 1, 2, 3)
+- Memory-mapped register interface
+- C driver for firmware integration
+- Testbenches for simulation
+- Example applications
+
+## Project Structure
+spi-communication-project/
+├── src/soc/ # RTL source files
+│ ├── spi_master.v # SPI master controller
+│ ├── spi_slave.v # SPI slave interface
+│ ├── spi_controller.v # Register interface controller
+│ └── top.v # Top-level SoC integration
+├── src/firmware/ # Firmware code
+│ ├── spi_driver.c # SPI driver library
+│ ├── spi_driver.h # Driver header
+│ └── main.c # Example application
+├── src/testbench/ # Testbenches
+│ ├── tb_spi_master.v # Master testbench
+│ └── tb_spi_slave.v # Slave testbench
+├── docs/ # Documentation
+└── scripts/ # Build scripts
+
+text
+
+## Getting Started
+
+### Prerequisites
+- Verilog simulator (Icarus Verilog, Verilator, or similar)
+- GCC toolchain for firmware
+- Make
+
+### Building and Testing
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/spi-communication-project.git
+cd spi-communication-project
+
+# Build the project
+make all
+
+# Run simulation
+make sim
+
+# Clean build files
+make clean
+SPI Configuration
+Modes Supported
+Mode 0: CPOL=0, CPHA=0
+
+Mode 1: CPOL=0, CPHA=1
+
+Mode 2: CPOL=1, CPHA=0
+
+Mode 3: CPOL=1, CPHA=1
+
+Register Map
+Address	Name	Description
+0x00	CONTROL	Control register
+0x04	STATUS	Status register
+0x08	TX_DATA	Transmit data
+0x0C	RX_DATA	Receive data
+0x10	CLK_DIV	Clock divider
+0x14	TX_FIFO	Transmit FIFO
+0x18	RX_FIFO	Receive FIFO
+0x1C	IRQ_EN	Interrupt enable
+Usage Examples
+Basic SPI Transfer
+c
+#include "spi_driver.h"
+
+void example_transfer(void) {
+    uint8_t tx_data = 0xAA;
+    uint8_t rx_data;
+    
+    spi_init(SPI_MODE_0, 4);    // Mode 0, clock divider 4
+    rx_data = spi_transfer(tx_data);
+}

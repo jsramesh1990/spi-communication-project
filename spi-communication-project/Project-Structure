@@ -1,0 +1,22 @@
+spi-communication-project/
+├── README.md
+├── LICENSE
+├── .gitignore
+├── docs/
+│   ├── architecture.md
+│   └── protocol.md
+├── src/
+│   ├── soc/
+│   │   ├── spi_master.v
+│   │   ├── spi_slave.v
+│   │   ├── spi_controller.v
+│   │   └── top.v
+│   ├── firmware/
+│   │   ├── spi_driver.c
+│   │   └── main.c
+│   └── testbench/
+│       ├── tb_spi_master.v
+│       └── tb_spi_slave.v
+├── scripts/
+│   └── build.sh
+└── Makefile
