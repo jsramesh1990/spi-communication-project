@@ -12,20 +12,19 @@ A complete, production-ready implementation of a SPI (Serial Peripheral Interfac
 ##  Table of Contents
 
 - [Overview](#-overview)
-- [✨ Features](#-features)
-- [🎯 Architecture](#-architecture)
-- [📊 System Flow](#-system-flow)
-- [🚀 Getting Started](#-getting-started)
+- [Features](#-features)
+- [Architecture](#-architecture)
+- [ System Flow](#-system-flow)
+- [ Getting Started](#-getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
   - [Quick Start](#quick-start)
-- [🧪 Testing](#-testing)
-- [📁 Project Structure](#-project-structure)
-- [🔧 Configuration](#-configuration)
-- [📚 Documentation](#-documentation)
-- [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
-- [📞 Contact](#-contact)
+- [ Testing](#-testing)
+- [ Project Structure](#-project-structure)
+- [ Configuration](#-configuration)
+- [ Documentation](#-documentation)
+- [ Contributing](#-contributing)
+
 
 ##  Overview
 
@@ -493,7 +492,7 @@ Found a bug or have a feature request? [Open an issue](https://github.com/yourus
 ---
 
 <div align="center">
-  <strong>Happy Coding! 🚀</strong>
+  <strong>Happy Coding! </strong>
 </div>
 
 <p align="center">
