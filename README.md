@@ -496,5 +496,5 @@ Found a bug or have a feature request? [Open an issue](https://github.com/yourus
 </div>
 
 <p align="center">
-  ⭐ Star this repo if you found it useful!
+   Star this repo if you found it useful!
 </p>
