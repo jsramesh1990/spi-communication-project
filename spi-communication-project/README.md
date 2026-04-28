@@ -9,25 +9,25 @@
 
 A complete, production-ready implementation of a SPI (Serial Peripheral Interface) communication system with a configurable System-on-Chip (SoC) design. This project provides a hardware-software co-design solution for embedded systems requiring SPI communication.
 
-## 📋 Table of Contents
+##  Table of Contents
 
 - [Overview](#-overview)
-- [✨ Features](#-features)
-- [🎯 Architecture](#-architecture)
-- [📊 System Flow](#-system-flow)
-- [🚀 Getting Started](#-getting-started)
+- [ Features](#-features)
+- [ Architecture](#-architecture)
+- [ System Flow](#-system-flow)
+- [ Getting Started](#-getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
   - [Quick Start](#quick-start)
-- [🧪 Testing](#-testing)
-- [📁 Project Structure](#-project-structure)
-- [🔧 Configuration](#-configuration)
-- [📚 Documentation](#-documentation)
-- [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
-- [📞 Contact](#-contact)
+- [ Testing](#-testing)
+- [ Project Structure](#-project-structure)
+- [ Configuration](#-configuration)
+- [ Documentation](#-documentation)
+- [ Contributing](#-contributing)
+- [ License](#-license)
+- [ Contact](#-contact)
 
-## 🌟 Overview
+##  Overview
 
 This project implements a fully-featured SPI communication system consisting of:
 
@@ -38,9 +38,9 @@ This project implements a fully-featured SPI communication system consisting of:
 
 SPI (Serial Peripheral Interface) is a synchronous serial communication protocol used for short-distance communication, primarily in embedded systems between microcontrollers and peripheral devices.
 
-## ✨ Features
+##  Features
 
-### 🔥 Core Features
+###  Core Features
 - **Full SPI Mode Support**: Modes 0, 1, 2, and 3 (CPOL/CPHA combinations)
 - **Configurable Clock Rates**: Programmable clock divider for flexible SPI frequencies
 - **Multiple Chip Selects**: Support for up to 4 slave devices
@@ -48,7 +48,7 @@ SPI (Serial Peripheral Interface) is a synchronous serial communication protocol
 - **Interrupt Support**: Configurable interrupt generation for transfer completion
 - **Loopback Mode**: Built-in self-test capability
 
-### 🛠️ Hardware Features
+###  Hardware Features
 - **Memory-Mapped Registers**: Wishbone-compatible bus interface
 - **Register Bank**:
   - Control/Status registers
@@ -58,19 +58,19 @@ SPI (Serial Peripheral Interface) is a synchronous serial communication protocol
 - **Error Detection**: Transfer error flags and status monitoring
 - **Synchronization**: Double synchronization for metastability protection
 
-### 💻 Software Features
+###  Software Features
 - **Complete C Driver API**: Easy-to-use library for application development
 - **Example Applications**: Ready-to-run test programs
 - **SPI Flash Support**: Example driver for common SPI flash memories
 - **Performance Testing**: Built-in benchmarking tools
 
-### 🧪 Verification Features
+###  Verification Features
 - **Testbenches**: Complete simulation environment for master and slave
 - **Waveform Generation**: VCD files for debugging and analysis
 - **Self-Checking Tests**: Automated test verification
 - **Code Coverage**: Support for coverage analysis
 
-## 🎯 Architecture
+##  Architecture
 
 ### System Block Diagram
 
@@ -170,7 +170,7 @@ graph TB
 | 0x1C | IRQ_EN | Interrupt enable register | R/W |
 | 0x20 | VERSION | Version register (read-only) | R |
 
-## 📊 System Flow
+##  System Flow
 
 ### Data Transfer Flow
 
@@ -228,7 +228,7 @@ MOSI    MSB   ...   ...   ...   ...   LSB
 MISO    MSB   ...   ...   ...   ...   LSB
 ```
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
@@ -305,7 +305,7 @@ cd build
 ./spi_test.elf
 ```
 
-## 🧪 Testing
+##  Testing
 
 ### Running Tests
 
@@ -345,7 +345,7 @@ The project includes comprehensive test coverage:
 3. Update Makefile if needed
 4. Run with `make sim`
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 spi-communication-project/
@@ -390,7 +390,7 @@ spi-communication-project/
 └── 📄 CHANGELOG.md                   # Version history
 ```
 
-## 🔧 Configuration
+##  Configuration
 
 ### SPI Mode Configuration
 
@@ -424,7 +424,7 @@ CLK_DIV = 25
 SPI_SCK = 50 MHz / (2 * 25) = 1 MHz
 ```
 
-## 📚 Documentation
+##  Documentation
 
 ### Building Documentation
 
@@ -461,7 +461,7 @@ The code includes detailed comments following these standards:
 - **C**: Doxygen-style comments for API functions
 - **Makefile**: Target descriptions and usage
 
-## 🤝 Contributing
+##  Contributing
 
 We welcome contributions! Please follow these steps:
 
@@ -504,7 +504,7 @@ Found a bug or have a feature request? [Open an issue](https://github.com/yourus
 - Expected vs actual behavior
 - Environment details
 
-## 📄 License
+##  License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
@@ -532,18 +532,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 📞 Contact
-
-### Project Maintainers
-
-- **Your Name** - [email@example.com](mailto:email@example.com)
-- **Project Lead** - [lead@example.com](mailto:lead@example.com)
-
-### Support Channels
-
-- 📧 **Email**: support@example.com
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/yourusername/spi-communication-project/discussions)
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/yourusername/spi-communication-project/issues)
 
 ### Acknowledgments
 
@@ -553,7 +541,7 @@ SOFTWARE.
 
 ---
 
-## 🚀 Quick Reference
+##  Quick Reference
 
 ### Common Commands
 
